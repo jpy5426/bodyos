@@ -73,7 +73,7 @@ export default function LibraryPage() {
   return (
     <div className="flex w-full flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Mobility &amp; Prehab Library</h1>
+        <h1 className="text-3xl font-black">Mobility &amp; Prehab Library</h1>
         <p className="text-sm text-muted-foreground">
           Low-impact movements for desk breaks, injury prevention and joint mobility.
         </p>
@@ -84,8 +84,8 @@ export default function LibraryPage() {
           <button
             key={t.value}
             onClick={() => setFocus(t.value)}
-            className={`rounded-full border px-4 py-1.5 text-sm transition ${
-              focus === t.value ? "border-foreground bg-foreground text-background" : "hover:bg-accent"
+            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold transition ${
+              focus === t.value ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"
             }`}
           >
             {t.label}
@@ -99,15 +99,15 @@ export default function LibraryPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search name or muscle…"
-          className="rounded-md border bg-background px-3 py-2 text-sm"
+          className="min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-sm"
         />
         <select value={region} onChange={(e) => setRegion(e.target.value)}
-          className="rounded-md border bg-background px-3 py-2 text-sm capitalize">
+          className="min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-sm capitalize">
           <option value="all">All body regions</option>
           {regions.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <select value={position} onChange={(e) => setPosition(e.target.value)}
-          className="rounded-md border bg-background px-3 py-2 text-sm capitalize">
+          className="min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-sm capitalize">
           <option value="all">Any position</option>
           {positions.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
@@ -121,7 +121,7 @@ export default function LibraryPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {filtered.map((e) => (
-          <div key={e.id} className="flex flex-col gap-2 rounded-lg border p-4">
+          <div key={e.id} className="flex flex-col gap-2 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
             <div className="flex items-start justify-between gap-2">
               <h2 className="font-semibold">{e.name}</h2>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs capitalize ${FOCUS_STYLE[e.focus]}`}>

@@ -56,6 +56,9 @@ export default function MealHistoryPage() {
   const [target, setTarget] = useState<Target | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Midnight today in the user's time zone. Set in the browser after load, because
+  // Cache Components can't pre-render a value that depends on the clock.
+  const [todayStart, setTodayStart] = useState<Date | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -65,6 +68,9 @@ export default function MealHistoryPage() {
       setGoal(t?.goal ?? null);
       setTarget(t?.target ?? null);
     })();
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setTodayStart(d);
   }, []);
 
   useEffect(() => {
@@ -99,9 +105,9 @@ export default function MealHistoryPage() {
       byKey.set(k, [...(byKey.get(k) ?? []), m]);
     }
     const out: Day[] = [];
+    if (!todayStart) return out;
     for (let i = 0; i < range; i++) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
+      const d = new Date(todayStart);
       d.setDate(d.getDate() - i);
       const k = localKey(d);
       const dayMeals = byKey.get(k) ?? [];
@@ -120,7 +126,7 @@ export default function MealHistoryPage() {
       });
     }
     return out;
-  }, [meals, range]);
+  }, [meals, range, todayStart]);
 
   const logged = days.filter((d) => d.meals.length > 0);
   const avg = logged.length
@@ -136,10 +142,10 @@ export default function MealHistoryPage() {
   const chartDays = [...days].reverse(); // oldest on the left
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 p-4">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Meal History</h1>
+          <h1 className="text-3xl font-black">Meal History</h1>
           <p className="text-sm text-muted-foreground">
             {goal && target ? (
               <>
@@ -166,7 +172,7 @@ export default function MealHistoryPage() {
             key={r}
             onClick={() => setRange(r)}
             aria-pressed={range === r}
-            className={`rounded-md border px-3 py-1 text-sm ${range === r ? "bg-foreground text-background" : ""}`}
+            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold ${range === r ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}
           >
             {r} days
           </button>
@@ -177,15 +183,15 @@ export default function MealHistoryPage() {
 
       {!loading && (
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-lg border p-3">
+          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
             <div className="text-2xl font-semibold">{logged.length}</div>
             <div className="text-xs text-muted-foreground">days logged</div>
           </div>
-          <div className="rounded-lg border p-3">
+          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
             <div className="text-2xl font-semibold">{avg ? avg.kcal : "–"}</div>
             <div className="text-xs text-muted-foreground">avg kcal / logged day</div>
           </div>
-          <div className="rounded-lg border p-3">
+          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
             <div className="text-2xl font-semibold">{target ? `${onTarget}/${logged.length}` : "–"}</div>
             <div className="text-xs text-muted-foreground">days within 10% of target</div>
           </div>
@@ -194,7 +200,7 @@ export default function MealHistoryPage() {
 
       {/* Daily calories chart */}
       {!loading && logged.length > 0 && (
-        <div className="rounded-lg border p-4">
+        <div className="rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
           <p className="mb-2 text-xs text-muted-foreground">
             Daily calories · dashed line = target ({target ? target.calories : "none"} kcal)
           </p>
@@ -215,7 +221,7 @@ export default function MealHistoryPage() {
                   title={`${d.date.toLocaleDateString([], { month: "short", day: "numeric" })}: ${d.totals.kcal} kcal`}
                 >
                   <div
-                    className={`w-full rounded-t ${over ? "bg-red-500" : "bg-foreground"}`}
+                    className={`w-full rounded-t ${over ? "bg-red-500" : "bg-primary"}`}
                     style={{ height: `${h}%`, minHeight: d.totals.kcal > 0 ? 2 : 0 }}
                   />
                 </div>
@@ -246,7 +252,7 @@ export default function MealHistoryPage() {
             .map((d) => {
               const s = target ? status(d.totals.kcal, target.calories) : null;
               return (
-                <div key={d.key} className="rounded-lg border">
+                <div key={d.key} className="overflow-hidden rounded-3xl border bg-card shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b p-3">
                     <span className="whitespace-nowrap font-medium">
                       {d.date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}

@@ -2,59 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BodyOS "Friendly Coach" theme.
+   Navy ink, tangerine brand accent, soft blue-white ground, rounded shapes.
+   Every page uses these tokens, so colors only need changing here. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 223 54% 97.5%; /* #F5F7FC page ground */
+    --foreground: 227 51% 19.2%; /* #18234A navy ink */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 227 51% 19.2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --popover-foreground: 227 51% 19.2%;
+    --primary: 227 51% 19.2%; /* navy buttons */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 223 60% 93.1%; /* #E3E9F8 */
+    --secondary-foreground: 227 51% 19.2%;
+    --muted: 224 44% 95.1%; /* #EDF0F8 bar tracks, hover */
+    --muted-foreground: 226 24% 38%; /* #4A5578 secondary text (7:1 on white) */
+    --accent: 224 44% 95.1%;
+    --accent-foreground: 227 51% 19.2%;
+    --brand: 32 91% 61%; /* #F6A341 tangerine: main calls to action */
+    --brand-foreground: 227 51% 19.2%; /* navy text on tangerine */
+    --info: 228 69% 54.5%; /* #3B5BDB secondary data color */
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 221 39% 90.4%; /* #DDE3F0 */
+    --input: 221 39% 86%;
+    --ring: 228 69% 54.5%;
+    --chart-1: 32 91% 61%;
+    --chart-2: 228 69% 54.5%;
+    --chart-3: 227 51% 19.2%;
+    --chart-4: 152 45% 55%;
+    --chart-5: 340 80% 72%;
+    --radius: 1rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 227 52% 12.4%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 227 51% 19.2%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 227 51% 19.2%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --primary-foreground: 227 51% 19.2%;
+    --secondary: 225 42% 24.5%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    --muted: 225 42% 24.5%;
+    --muted-foreground: 225 38% 78.6%;
+    --accent: 225 42% 24.5%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --brand: 32 91% 61%;
+    --brand-foreground: 227 51% 19.2%;
+    --info: 228 80% 72%;
+    --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --border: 227 40% 30%;
+    --input: 227 40% 30%;
+    --ring: 228 80% 72%;
+    --chart-1: 32 91% 61%;
+    --chart-2: 228 80% 72%;
+    --chart-3: 0 0% 98%;
+    --chart-4: 152 45% 55%;
+    --chart-5: 340 80% 72%;
   }
 }
 
@@ -64,5 +73,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Visible keyboard focus everywhere. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }

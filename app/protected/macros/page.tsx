@@ -15,7 +15,7 @@ import {
 } from "@/lib/macros";
 
 const field =
-  "w-full rounded-md border bg-background px-3 py-2 text-foreground";
+  "w-full min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-foreground";
 
 export default function MacrosPage() {
   const [sex, setSex] = useState<Sex>("male");
@@ -107,10 +107,15 @@ export default function MacrosPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6 p-4">
-      <h1 className="text-2xl font-bold">Macro Calculator</h1>
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-3xl font-black">Macro Calculator</h1>
+        <p className="text-muted-foreground">
+          Your daily calorie and protein, carb and fat targets. The goal you pick here is what your meal log tracks.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
         <label className="space-y-1">
           <span className="text-sm">Sex</span>
           <select className={field} value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
@@ -168,7 +173,7 @@ export default function MacrosPage() {
 
       <button
         onClick={handleCalculate}
-        className="rounded-md bg-foreground px-4 py-2 text-background"
+        className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 font-black text-brand-foreground hover:brightness-95"
       >
         Calculate
       </button>
@@ -177,7 +182,7 @@ export default function MacrosPage() {
       {status && <p className="text-green-600">{status}</p>}
 
       {result && (
-        <>
+        <div className="space-y-3 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b">
@@ -190,7 +195,7 @@ export default function MacrosPage() {
             </thead>
             <tbody>
               {GOALS.map(([label, key]) => (
-                <tr key={key} className={`border-b ${key === goal ? "bg-accent font-semibold" : "text-muted-foreground"}`}>
+                <tr key={key} className={`border-b ${key === goal ? "bg-brand/20 font-bold" : "text-muted-foreground"}`}>
                   <td className="py-2 pl-2">
                     {label}
                     {key === goal && <span className="ml-2 text-xs font-normal">your target</span>}
@@ -208,7 +213,7 @@ export default function MacrosPage() {
               Cutting target raised to a {MIN_CALORIES[sex]}-calorie minimum.
             </p>
           )}
-        </>
+        </div>
       )}
 
       <p className="text-sm text-muted-foreground">

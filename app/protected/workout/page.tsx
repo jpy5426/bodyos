@@ -48,7 +48,7 @@ type Plan = {
   days: PlanDay[];
 };
 
-const field = "w-full rounded-md border bg-background px-3 py-2 text-foreground";
+const field = "w-full min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-foreground";
 
 export default function RoutinePage() {
   const [objective, setObjective] = useState<Goal>("desk_relief");
@@ -130,16 +130,16 @@ export default function RoutinePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 p-4">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">AI Mobility &amp; Prehab Routine Builder</h1>
+        <h1 className="text-3xl font-black">AI Mobility &amp; Prehab Routine Builder</h1>
         <p className="text-sm text-muted-foreground">
           Short, low-impact routines for people who sit most of the day, want to prevent injuries, or
           want to move better.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
         <label className="space-y-1">
           <span className="text-sm">Goal</span>
           <select className={field} value={objective} onChange={(e) => setObjective(e.target.value as Goal)}>
@@ -208,7 +208,7 @@ export default function RoutinePage() {
         </div>
       </div>
 
-      <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+      <label className="flex items-start gap-2 rounded-2xl border bg-card p-4 text-sm">
         <input type="checkbox" className="mt-1" checked={hasPain} onChange={(e) => setHasPain(e.target.checked)} />
         <span>
           I have current pain or an injury.
@@ -221,7 +221,7 @@ export default function RoutinePage() {
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+        className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 font-black text-brand-foreground hover:brightness-95 disabled:opacity-50"
       >
         {loading ? "Building your routine... this can take up to a minute" : "Build my routine"}
       </button>
@@ -235,10 +235,10 @@ export default function RoutinePage() {
               {GOAL_LABEL[plan.objective]} &middot; {plan.minutes} min &middot; {plan.weeks} weeks &middot; rotate
               routines A → B → C
             </p>
-            <p className="rounded-md bg-accent p-3 text-sm">{plan.guide}</p>
+            <p className="rounded-2xl bg-secondary p-4 text-sm">{plan.guide}</p>
           </div>
           {plan.days.map((day) => (
-            <div key={day.day_label} className="space-y-3 rounded-md border p-4">
+            <div key={day.day_label} className="space-y-3 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
               <h2 className="text-lg font-semibold">
                 Routine {day.day_label}: {day.focus}
               </h2>

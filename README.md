@@ -79,6 +79,7 @@ npm install
    - `02_mobility_library.sql`: mobility / prehab / sedentary columns and exercises
    - `03_macro_profiles.sql`: saved macro calculator profiles
    - `04_routine_dose.sql`: stores each exercise's dose on saved routines
+   - `05_fill_original_exercises.sql`: how-to steps, body regions and doses for the original exercises
    - `05_meal_logs.sql`: saved meals and their food items
    - `06_macro_goal.sql`: the goal (maintain / cut / bulk) on the macro profile
 3. Check **Table Editor**. You should see `macro_profiles`, `exercises`, `workout_plans`, `plan_days`, `plan_exercises`, `meal_logs` and `meal_items`.

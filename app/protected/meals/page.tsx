@@ -36,7 +36,7 @@ type SavedMeal = {
   fat_g: number;
 };
 
-const field = "w-full rounded-md border bg-background px-3 py-2 text-foreground";
+const field = "w-full min-h-11 rounded-xl border border-input bg-card px-3 py-2 text-foreground";
 const ZERO: Per100g = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
 // Shrinks the photo in the browser before upload (max 1024 px, JPEG).
@@ -80,7 +80,7 @@ function defaultMealType(): MealType {
 export default function MealsPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [mealType, setMealType] = useState<MealType>(defaultMealType);
+  const [mealType, setMealType] = useState<MealType>("snack");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -118,6 +118,8 @@ export default function MealsPage() {
       setTarget(t?.target ?? null);
     })();
     loadToday();
+    // Reads the clock, so it runs in the browser after load (Cache Components can't pre-render it).
+    setMealType(defaultMealType());
   }, [loadToday]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -297,28 +299,28 @@ export default function MealsPage() {
   const unmatched = items.filter((it) => !it.matched).length;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 p-4">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Meal Photo Estimator</h1>
+        <h1 className="text-3xl font-black">Meal Photo Estimator</h1>
         <p className="text-sm text-muted-foreground">
           AI names the foods and guesses the portion. Calories and macros come from USDA FoodData Central.
           Check the weights before saving.
         </p>
       </div>
 
-      <div className="space-y-3 rounded-lg border p-4">
+      <div className="space-y-3 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
         <label className="block space-y-1">
           <span className="text-sm">Photo of your plate (top-down works best)</span>
           <input type="file" accept="image/*" capture="environment" onChange={handleFile} className={field} />
         </label>
         {photo && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="Meal preview" className="max-h-72 rounded-md border object-contain" />
+          <img src={photo} alt="Meal preview" className="max-h-72 rounded-2xl border object-contain" />
         )}
         <button
           onClick={analyze}
           disabled={!photo || busy}
-          className="rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 font-black text-brand-foreground hover:brightness-95 disabled:opacity-50"
         >
           {busy && items.length === 0 ? "Analyzing…" : "Estimate calories"}
         </button>
@@ -334,7 +336,7 @@ export default function MealsPage() {
       )}
 
       {(items.length > 0 || searchTarget === "new") && (
-        <div className="space-y-4 rounded-lg border p-4">
+        <div className="space-y-4 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
           {items.length > 0 && (
           <table className="w-full text-left text-sm">
             <thead>
@@ -414,7 +416,7 @@ export default function MealsPage() {
               + Add a food the AI missed
             </button>
           ) : (
-            <div className="space-y-3 rounded-md border bg-accent/40 p-3">
+            <div className="space-y-3 rounded-2xl border bg-secondary/60 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">
                   {searchTarget === "new"
@@ -437,14 +439,14 @@ export default function MealsPage() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 font-extrabold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   {searching ? "…" : "Search"}
                 </button>
               </form>
               {searchMsg && <p className="text-sm text-muted-foreground">{searchMsg}</p>}
               {results.length > 0 && (
-                <ul className="divide-y rounded-md border bg-background">
+                <ul className="divide-y overflow-hidden rounded-xl border bg-card">
                   {results.map((r) => (
                     <li key={r.fdc_id}>
                       <button
@@ -481,7 +483,7 @@ export default function MealsPage() {
             <button
               onClick={saveMeal}
               disabled={busy}
-              className="rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 font-extrabold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               Save meal
             </button>
@@ -491,14 +493,14 @@ export default function MealsPage() {
 
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">Today</h2>
+          <h2 className="text-xl font-black">Today</h2>
           <Link href="/protected/meals/history" className="text-sm underline">
             View history →
           </Link>
         </div>
 
         {target && goal ? (
-          <div className="space-y-2 rounded-lg border p-4">
+          <div className="space-y-2 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
             <p className="text-sm text-muted-foreground">
               Goal: <span className="font-medium capitalize text-foreground">{GOAL_LABEL[goal]}</span> ·{" "}
               <Link href="/protected/macros" className="underline">
@@ -522,9 +524,9 @@ export default function MealsPage() {
                       {Math.round(eaten)} / {goalValue} {unit} <span className="text-muted-foreground">({pct}%)</span>
                     </span>
                   </div>
-                  <div className="mt-1 h-2 w-full overflow-hidden rounded bg-accent">
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className={`h-full ${pct > 100 ? "bg-red-500" : "bg-foreground"}`}
+                      className={`h-full ${pct > 100 ? "bg-red-500" : "bg-primary"}`}
                       style={{ width: `${Math.min(100, pct)}%` }}
                     />
                   </div>
@@ -544,7 +546,7 @@ export default function MealsPage() {
         {today.length === 0 ? (
           <p className="text-sm text-muted-foreground">No meals saved today.</p>
         ) : (
-          <ul className="divide-y rounded-lg border">
+          <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
             {today.map((m) => (
               <li key={m.id} className="flex items-center justify-between p-3 text-sm">
                 <span>
