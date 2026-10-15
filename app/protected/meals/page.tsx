@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { calculateMacros, lbsToKg } from "@finegym/fitness-calc";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { scale, sum, type Per100g } from "@/lib/nutrition";
+import { GOAL_LABEL, targetFromProfile, type Goal, type Target } from "@/lib/macros";
 
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -83,7 +84,9 @@ export default function MealsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [target, setTarget] = useState<number | null>(null);
+  // Daily target for the goal picked in the Macro Calculator.
+  const [goal, setGoal] = useState<Goal | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
   const [today, setToday] = useState<SavedMeal[]>([]);
   // USDA search panel: which row it's fixing, or "new" to add a food.
   const [searchTarget, setSearchTarget] = useState<number | "new" | null>(null);
@@ -105,26 +108,14 @@ export default function MealsPage() {
     else setToday((data ?? []) as SavedMeal[]);
   }, []);
 
-  // Daily calorie target comes from the saved macro profile (maintenance).
+  // Daily target comes from the saved macro profile and its chosen goal.
   useEffect(() => {
     const supabase = createClient();
     (async () => {
       const { data } = await supabase.from("macro_profiles").select("*").maybeSingle();
-      if (data) {
-        try {
-          const r = calculateMacros(
-            lbsToKg(Number(data.weight_lbs)),
-            Number(data.height_in) * 2.54,
-            Number(data.age),
-            data.sex,
-            data.activity,
-            data.preset,
-          );
-          setTarget(r.maintenance.calories);
-        } catch {
-          setTarget(null);
-        }
-      }
+      const t = data ? targetFromProfile(data) : null;
+      setGoal(t?.goal ?? null);
+      setTarget(t?.target ?? null);
     })();
     loadToday();
   }, [loadToday]);
@@ -295,7 +286,14 @@ export default function MealsPage() {
   }
 
   const mealTotal = sum(items.filter((it) => it.matched).map(portion));
-  const dayKcal = today.reduce((t, m) => t + m.total_kcal, 0);
+  const dayTotals = sum(
+    today.map((m) => ({
+      kcal: Number(m.total_kcal),
+      protein: Number(m.protein_g),
+      carbs: Number(m.carbs_g),
+      fat: Number(m.fat_g),
+    })),
+  );
   const unmatched = items.filter((it) => !it.matched).length;
 
   return (
@@ -379,7 +377,7 @@ export default function MealsPage() {
                     <td className="py-2">{it.matched ? p.protein : "–"}</td>
                     <td className="py-2">{it.matched ? p.carbs : "–"}</td>
                     <td className="py-2">{it.matched ? p.fat : "–"}</td>
-                    <td className="py-2">
+                    <td className="py-2 pl-3">
                       <div className="flex flex-col items-start gap-1">
                         <button onClick={() => openSearch(i)} className="text-xs underline" aria-label={`Change USDA match for ${it.name}`}>
                           {it.matched ? "Change" : "Find match"}
@@ -463,10 +461,10 @@ export default function MealsPage() {
             </div>
           )}
 
-          {target && items.length > 0 && (
+          {target && goal && items.length > 0 && (
             <p className="text-sm">
-              This meal is about <b>{Math.round((mealTotal.kcal / target) * 100)}%</b> of your {target} kcal daily
-              maintenance target.
+              This meal is about <b>{Math.round((mealTotal.kcal / target.calories) * 100)}%</b> of your{" "}
+              {target.calories} kcal daily {GOAL_LABEL[goal]} target.
             </p>
           )}
 
@@ -491,40 +489,76 @@ export default function MealsPage() {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h2 className="text-lg font-semibold">Today</h2>
+
+        {target && goal ? (
+          <div className="space-y-2 rounded-lg border p-4">
+            <p className="text-sm text-muted-foreground">
+              Goal: <span className="font-medium capitalize text-foreground">{GOAL_LABEL[goal]}</span> ·{" "}
+              <Link href="/protected/macros" className="underline">
+                change
+              </Link>
+            </p>
+            {(
+              [
+                ["Calories", dayTotals.kcal, target.calories, "kcal"],
+                ["Protein", dayTotals.protein, target.protein, "g"],
+                ["Carbs", dayTotals.carbs, target.carbs, "g"],
+                ["Fat", dayTotals.fat, target.fat, "g"],
+              ] as const
+            ).map(([label, eaten, goalValue, unit]) => {
+              const pct = goalValue > 0 ? Math.round((eaten / goalValue) * 100) : 0;
+              return (
+                <div key={label} className="text-sm">
+                  <div className="flex justify-between">
+                    <span>{label}</span>
+                    <span>
+                      {Math.round(eaten)} / {goalValue} {unit} <span className="text-muted-foreground">({pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded bg-accent">
+                    <div
+                      className={`h-full ${pct > 100 ? "bg-red-500" : "bg-foreground"}`}
+                      style={{ width: `${Math.min(100, pct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Link href="/protected/macros" className="underline">
+              Save a profile in the Macro Calculator
+            </Link>{" "}
+            to compare your meals against a daily target.
+          </p>
+        )}
+
         {today.length === 0 ? (
           <p className="text-sm text-muted-foreground">No meals saved today.</p>
         ) : (
-          <>
-            <ul className="divide-y rounded-lg border">
-              {today.map((m) => (
-                <li key={m.id} className="flex items-center justify-between p-3 text-sm">
+          <ul className="divide-y rounded-lg border">
+            {today.map((m) => (
+              <li key={m.id} className="flex items-center justify-between p-3 text-sm">
+                <span>
+                  <span className="font-medium capitalize">{m.meal_type}</span>{" "}
+                  <span className="text-muted-foreground">
+                    {new Date(m.eaten_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  </span>
+                </span>
+                <span className="flex items-center gap-4">
                   <span>
-                    <span className="font-medium capitalize">{m.meal_type}</span>{" "}
-                    <span className="text-muted-foreground">
-                      {new Date(m.eaten_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                    </span>
+                    {m.total_kcal} kcal · P {m.protein_g} · C {m.carbs_g} · F {m.fat_g}
                   </span>
-                  <span className="flex items-center gap-4">
-                    <span>
-                      {m.total_kcal} kcal · P {m.protein_g} · C {m.carbs_g} · F {m.fat_g}
-                    </span>
-                    <button onClick={() => deleteMeal(m.id)} className="text-xs text-red-500">
-                      Delete
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-sm">
-              <b>{dayKcal} kcal</b> today
-              {target ? ` of ${target} kcal maintenance (${Math.round((dayKcal / target) * 100)}%).` : "."}
-              {!target && (
-                <span className="text-muted-foreground"> Save a profile in the Macro Calculator to see your target.</span>
-              )}
-            </p>
-          </>
+                  <button onClick={() => deleteMeal(m.id)} className="text-xs text-red-500">
+                    Delete
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

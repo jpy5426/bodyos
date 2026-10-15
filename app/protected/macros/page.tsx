@@ -1,47 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { calculateMacros, lbsToKg, feetInchesToCm } from "@finegym/fitness-calc";
 import { createClient } from "@/lib/supabase/client";
-
-type Sex = "male" | "female";
-type Activity =
-  | "sedentary" | "light" | "moderate"
-  | "active" | "very_active" | "extra_active";
-type Preset = "balanced" | "low_carb" | "high_carb" | "high_protein";
-type MacroResult = ReturnType<typeof calculateMacros>;
-
-const goals = [
-  ["Maintenance", "maintenance"],
-  ["Cutting", "cutting"],
-  ["Bulking", "bulking"],
-] as const;
+import {
+  computeMacros,
+  GOALS,
+  isGoal,
+  MIN_CALORIES,
+  type Activity,
+  type Goal,
+  type MacroResult,
+  type Preset,
+  type Sex,
+} from "@/lib/macros";
 
 const field =
   "w-full rounded-md border bg-background px-3 py-2 text-foreground";
-
-// Common minimum daily calories for unsupervised dieting.
-const MIN_CALORIES: Record<Sex, number> = { female: 1200, male: 1500 };
-
-function applyFloor(result: MacroResult, sex: Sex) {
-  const min = MIN_CALORIES[sex];
-  const cut = result.cutting;
-  if (cut.calories >= min) return { result, raised: false };
-  const f = min / cut.calories;
-  return {
-    result: {
-      ...result,
-      cutting: {
-        ...cut,
-        calories: min,
-        protein: Math.round(cut.protein * f),
-        carbs: Math.round(cut.carbs * f),
-        fat: Math.round(cut.fat * f),
-      },
-    },
-    raised: true,
-  };
-}
 
 export default function MacrosPage() {
   const [sex, setSex] = useState<Sex>("male");
@@ -51,6 +25,7 @@ export default function MacrosPage() {
   const [inches, setInches] = useState("10");
   const [activity, setActivity] = useState<Activity>("moderate");
   const [preset, setPreset] = useState<Preset>("balanced");
+  const [goal, setGoal] = useState<Goal>("maintenance");
   const [result, setResult] = useState<MacroResult | null>(null);
   const [raised, setRaised] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +51,7 @@ export default function MacrosPage() {
         setInches(String(Math.round((data.height_in % 12) * 10) / 10));
         setActivity(data.activity as Activity);
         setPreset(data.preset as Preset);
+        if (isGoal(data.goal)) setGoal(data.goal);
       }
     })();
   }, []);
@@ -99,8 +75,7 @@ export default function MacrosPage() {
     }
 
     try {
-      const raw = calculateMacros(lbsToKg(w), feetInchesToCm(ft, inch), a, sex, activity, preset);
-      const adjusted = applyFloor(raw, sex);
+      const adjusted = computeMacros(w, ft * 12 + inch, a, sex, activity, preset);
       setResult(adjusted.result);
       setRaised(adjusted.raised);
     } catch (e) {
@@ -109,7 +84,7 @@ export default function MacrosPage() {
       return;
     }
 
-    // Save the inputs for next time.
+    // Save the inputs (and the chosen goal) for next time.
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
@@ -124,10 +99,11 @@ export default function MacrosPage() {
       height_in: ft * 12 + inch,
       activity,
       preset,
+      goal,
       updated_at: new Date().toISOString(),
     });
     if (saveError) setError(`Calculated, but saving failed: ${saveError.message}`);
-    else setStatus("Profile saved.");
+    else setStatus("Profile saved. Your meal log now uses this goal.");
   }
 
   return (
@@ -180,6 +156,14 @@ export default function MacrosPage() {
             <option value="high_carb">High carb</option>
           </select>
         </label>
+        <label className="col-span-2 space-y-1">
+          <span className="text-sm">Goal</span>
+          <select className={field} value={goal} onChange={(e) => setGoal(e.target.value as Goal)}>
+            <option value="maintenance">Maintain weight</option>
+            <option value="cutting">Lose weight (cut, −20%)</option>
+            <option value="bulking">Gain weight (bulk, +15%)</option>
+          </select>
+        </label>
       </div>
 
       <button
@@ -205,9 +189,12 @@ export default function MacrosPage() {
               </tr>
             </thead>
             <tbody>
-              {goals.map(([label, key]) => (
-                <tr key={key} className="border-b">
-                  <td className="py-2">{label}</td>
+              {GOALS.map(([label, key]) => (
+                <tr key={key} className={`border-b ${key === goal ? "bg-accent font-semibold" : "text-muted-foreground"}`}>
+                  <td className="py-2 pl-2">
+                    {label}
+                    {key === goal && <span className="ml-2 text-xs font-normal">your target</span>}
+                  </td>
                   <td>{result[key].calories}</td>
                   <td>{result[key].protein}</td>
                   <td>{result[key].carbs}</td>
