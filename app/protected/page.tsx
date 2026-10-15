@@ -19,6 +19,11 @@ const FEATURES = [
     title: "Macro & Calorie Calculator",
     desc: "Daily calorie target and protein / fat / carb grams from your stats and goal.",
   },
+  {
+    href: "/protected/meals",
+    title: "Meal Photo Estimator",
+    desc: "Snap your plate. AI names the foods; USDA data gives the calories and macros.",
+  },
 ];
 
 async function Greeting() {
@@ -44,7 +49,7 @@ export default function ProtectedPage() {
         </Suspense>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {FEATURES.map((f) => (
           <Link
             key={f.href}
