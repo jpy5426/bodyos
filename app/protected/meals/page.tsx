@@ -10,12 +10,19 @@ type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 type Item = {
   name: string;
   grams: number;
-  ai_grams: number;
+  ai_grams: number | null; // null when the user added the food by hand
   confidence: "high" | "medium" | "low";
   matched: boolean;
   fdc_id: number | null;
   usda_description: string | null;
   per100g: Per100g | null;
+};
+
+type SearchResult = {
+  fdc_id: number;
+  description: string;
+  data_type: string;
+  per100g: Per100g;
 };
 
 type SavedMeal = {
@@ -62,6 +69,7 @@ function portion(item: Item): Per100g {
 
 function defaultMealType(): MealType {
   const h = new Date().getHours();
+  if (h < 5) return "snack";
   if (h < 11) return "breakfast";
   if (h < 16) return "lunch";
   if (h < 21) return "dinner";
@@ -77,6 +85,12 @@ export default function MealsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [target, setTarget] = useState<number | null>(null);
   const [today, setToday] = useState<SavedMeal[]>([]);
+  // USDA search panel: which row it's fixing, or "new" to add a food.
+  const [searchTarget, setSearchTarget] = useState<number | "new" | null>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchMsg, setSearchMsg] = useState<string | null>(null);
 
   const loadToday = useCallback(async () => {
     const supabase = createClient();
@@ -162,6 +176,52 @@ export default function MealsPage() {
 
   function removeItem(i: number) {
     setItems((prev) => prev.filter((_, j) => j !== i));
+    setSearchTarget(null);
+  }
+
+  function openSearch(target: number | "new") {
+    setSearchTarget(target);
+    setQuery(target === "new" ? "" : items[target].name);
+    setResults([]);
+    setSearchMsg(null);
+  }
+
+  async function runSearch(e?: React.FormEvent) {
+    e?.preventDefault();
+    const q = query.trim();
+    if (q.length < 2) {
+      setSearchMsg("Type at least 2 letters.");
+      return;
+    }
+    setSearching(true);
+    setSearchMsg(null);
+    try {
+      const res = await fetch(`/api/food-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Search failed.");
+      setResults(data.results as SearchResult[]);
+      if (data.results.length === 0) setSearchMsg("No USDA foods found. Try a simpler word, like \"salmon\".");
+    } catch (err) {
+      setSearchMsg(err instanceof Error ? err.message : "Search failed.");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  // Applies the chosen USDA food to a row, or adds it as a new row.
+  function chooseResult(r: SearchResult) {
+    const usda = { matched: true, fdc_id: r.fdc_id, usda_description: r.description, per100g: r.per100g };
+    if (searchTarget === "new") {
+      const name = query.trim() || r.description;
+      setItems((prev) => [
+        ...prev,
+        { name: name.charAt(0).toUpperCase() + name.slice(1), grams: 100, ai_grams: null, confidence: "high", ...usda },
+      ]);
+    } else if (typeof searchTarget === "number") {
+      setItems((prev) => prev.map((it, j) => (j === searchTarget ? { ...it, ...usda } : it)));
+    }
+    setSearchTarget(null);
+    setResults([]);
   }
 
   async function saveMeal() {
@@ -223,6 +283,7 @@ export default function MealsPage() {
     setStatus("Meal saved.");
     setItems([]);
     setPhoto(null);
+    setSearchTarget(null);
     loadToday();
   }
 
@@ -268,8 +329,15 @@ export default function MealsPage() {
       {error && <p className="text-red-500">{error}</p>}
       {status && <p className="text-green-600">{status}</p>}
 
-      {items.length > 0 && (
+      {photo === null && items.length === 0 && searchTarget === null && (
+        <button onClick={() => openSearch("new")} className="text-sm underline">
+          No photo? Add foods by hand
+        </button>
+      )}
+
+      {(items.length > 0 || searchTarget === "new") && (
         <div className="space-y-4 rounded-lg border p-4">
+          {items.length > 0 && (
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b">
@@ -312,9 +380,14 @@ export default function MealsPage() {
                     <td className="py-2">{it.matched ? p.carbs : "–"}</td>
                     <td className="py-2">{it.matched ? p.fat : "–"}</td>
                     <td className="py-2">
-                      <button onClick={() => removeItem(i)} className="text-xs text-red-500" aria-label={`Remove ${it.name}`}>
-                        Remove
-                      </button>
+                      <div className="flex flex-col items-start gap-1">
+                        <button onClick={() => openSearch(i)} className="text-xs underline" aria-label={`Change USDA match for ${it.name}`}>
+                          {it.matched ? "Change" : "Find match"}
+                        </button>
+                        <button onClick={() => removeItem(i)} className="text-xs text-red-500" aria-label={`Remove ${it.name}`}>
+                          Remove
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -330,6 +403,7 @@ export default function MealsPage() {
               </tr>
             </tbody>
           </table>
+          )}
 
           {unmatched > 0 && (
             <p className="text-sm text-muted-foreground">
@@ -337,7 +411,59 @@ export default function MealsPage() {
               counted.
             </p>
           )}
-          {target && (
+          {searchTarget === null ? (
+            <button onClick={() => openSearch("new")} className="text-sm underline">
+              + Add a food the AI missed
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-md border bg-accent/40 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {searchTarget === "new"
+                    ? "Add a food"
+                    : `Choose the right USDA food for "${items[searchTarget]?.name}"`}
+                </p>
+                <button onClick={() => setSearchTarget(null)} className="text-xs underline">
+                  Cancel
+                </button>
+              </div>
+              <form onSubmit={runSearch} className="flex gap-2">
+                <input
+                  className={field}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="e.g. greek yogurt plain"
+                  autoFocus
+                  aria-label="Search USDA foods"
+                />
+                <button
+                  type="submit"
+                  disabled={searching}
+                  className="rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+                >
+                  {searching ? "…" : "Search"}
+                </button>
+              </form>
+              {searchMsg && <p className="text-sm text-muted-foreground">{searchMsg}</p>}
+              {results.length > 0 && (
+                <ul className="divide-y rounded-md border bg-background">
+                  {results.map((r) => (
+                    <li key={r.fdc_id}>
+                      <button
+                        onClick={() => chooseResult(r)}
+                        className="flex w-full justify-between gap-3 p-2 text-left text-sm hover:bg-accent"
+                      >
+                        <span>{r.description}</span>
+                        <span className="shrink-0 text-muted-foreground">{Math.round(r.per100g.kcal)} kcal/100 g</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {target && items.length > 0 && (
             <p className="text-sm">
               This meal is about <b>{Math.round((mealTotal.kcal / target) * 100)}%</b> of your {target} kcal daily
               maintenance target.

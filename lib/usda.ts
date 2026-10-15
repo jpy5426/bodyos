@@ -143,8 +143,8 @@ export function scoreCandidate(query: string, description: string, rank = 0): nu
   );
 }
 
-// Searches FoodData Central and returns the best usable match, or null.
-export async function searchFood(query: string): Promise<UsdaMatch | null> {
+// Raw search against FoodData Central (generic foods only). Empty list on failure.
+async function fetchFoods(query: string): Promise<FdcFood[]> {
   const apiKey = process.env.USDA_API_KEY;
   if (!apiKey) throw new Error("USDA_API_KEY is not set");
 
@@ -162,27 +162,44 @@ export async function searchFood(query: string): Promise<UsdaMatch | null> {
     );
     if (!res.ok) {
       console.error("USDA search failed:", res.status, (await res.text()).slice(0, 300));
-      return null;
+      return [];
     }
     const data = await res.json();
-    const foods: FdcFood[] = Array.isArray(data?.foods) ? data.foods : [];
-    return pickBest(query, foods);
+    return Array.isArray(data?.foods) ? data.foods : [];
   } catch (err) {
     console.error("USDA search error:", err);
-    return null;
+    return [];
   } finally {
     clearTimeout(timeout);
   }
 }
 
-// Exported for unit tests.
-export function pickBest(query: string, foods: FdcFood[]): UsdaMatch | null {
-  let best: { match: UsdaMatch; score: number } | null = null;
+// Usable candidates, best first. Exported for unit tests.
+export function rankFoods(query: string, foods: FdcFood[]): UsdaMatch[] {
+  const scored: { match: UsdaMatch; score: number }[] = [];
+  const seen = new Set<string>();
   foods.forEach((food, rank) => {
     const score = scoreCandidate(query, food.description ?? "", rank);
     if (score === null) return;
     const match = parseFood(food);
-    if (match && (!best || score > best.score)) best = { match, score };
+    const key = (food.description ?? "").toLowerCase();
+    if (!match || seen.has(key)) return; // FNDDS and SR Legacy often repeat a description
+    seen.add(key);
+    scored.push({ match, score });
   });
-  return best ? (best as { match: UsdaMatch }).match : null;
+  return scored.sort((a, b) => b.score - a.score).map((x) => x.match);
+}
+
+export function pickBest(query: string, foods: FdcFood[]): UsdaMatch | null {
+  return rankFoods(query, foods)[0] ?? null;
+}
+
+// Best single match. Used by the photo estimator.
+export async function searchFood(query: string): Promise<UsdaMatch | null> {
+  return pickBest(query, await fetchFoods(query));
+}
+
+// Several options, best first. Used by the "Change match" / "Add food" search.
+export async function searchFoods(query: string, limit = 8): Promise<UsdaMatch[]> {
+  return rankFoods(query, await fetchFoods(query)).slice(0, limit);
 }
