@@ -490,7 +490,12 @@ export default function MealsPage() {
       )}
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Today</h2>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">Today</h2>
+          <Link href="/protected/meals/history" className="text-sm underline">
+            View history →
+          </Link>
+        </div>
 
         {target && goal ? (
           <div className="space-y-2 rounded-lg border p-4">
