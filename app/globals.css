@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BodyOS "Friendly Coach" theme.
-   Navy ink, tangerine brand accent, soft blue-white ground, rounded shapes.
+/* BodyOS theme (Friendly Coach colors, professional shapes).
+   Navy ink and navy top bar, tangerine brand accent, gray-blue ground, Inter type, tight corners.
    Every page uses these tokens, so colors only need changing here. */
 @layer base {
   :root {
-    --background: 223 54% 97.5%; /* #F5F7FC page ground */
+    --background: 218 30% 92.7%; /* #E7EBF2 page ground (deeper, so white cards stand out) */
     --foreground: 227 51% 19.2%; /* #18234A navy ink */
     --card: 0 0% 100%;
     --card-foreground: 227 51% 19.2%;
@@ -15,26 +15,26 @@
     --popover-foreground: 227 51% 19.2%;
     --primary: 227 51% 19.2%; /* navy buttons */
     --primary-foreground: 0 0% 100%;
-    --secondary: 223 60% 93.1%; /* #E3E9F8 */
+    --secondary: 220 35% 89.8%; /* #DCE2EE */
     --secondary-foreground: 227 51% 19.2%;
-    --muted: 224 44% 95.1%; /* #EDF0F8 bar tracks, hover */
-    --muted-foreground: 226 24% 38%; /* #4A5578 secondary text (7:1 on white) */
-    --accent: 224 44% 95.1%;
+    --muted: 219 32% 91.4%; /* #E2E7F0 bar tracks, hover */
+    --muted-foreground: 225 26% 30.6%; /* #3A4462 secondary text (9:1 on white) */
+    --accent: 219 32% 91.4%;
     --accent-foreground: 227 51% 19.2%;
     --brand: 32 91% 61%; /* #F6A341 tangerine: main calls to action */
     --brand-foreground: 227 51% 19.2%; /* navy text on tangerine */
     --info: 228 69% 54.5%; /* #3B5BDB secondary data color */
     --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 100%;
-    --border: 221 39% 90.4%; /* #DDE3F0 */
-    --input: 221 39% 86%;
+    --border: 218 27% 83.9%; /* #CBD3E1 */
+    --input: 218 27% 80.2%;
     --ring: 228 69% 54.5%;
     --chart-1: 32 91% 61%;
     --chart-2: 228 69% 54.5%;
     --chart-3: 227 51% 19.2%;
     --chart-4: 152 45% 55%;
     --chart-5: 340 80% 72%;
-    --radius: 1rem;
+    --radius: 0.5rem;
   }
   .dark {
     --background: 227 52% 12.4%;

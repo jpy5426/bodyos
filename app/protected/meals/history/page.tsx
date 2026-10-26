@@ -145,7 +145,7 @@ export default function MealHistoryPage() {
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black">Meal History</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Meal History</h1>
           <p className="text-sm text-muted-foreground">
             {goal && target ? (
               <>
@@ -172,7 +172,7 @@ export default function MealHistoryPage() {
             key={r}
             onClick={() => setRange(r)}
             aria-pressed={range === r}
-            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold ${range === r ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}
+            className={`inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-bold ${range === r ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}
           >
             {r} days
           </button>
@@ -183,15 +183,15 @@ export default function MealHistoryPage() {
 
       {!loading && (
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="text-2xl font-semibold">{logged.length}</div>
             <div className="text-xs text-muted-foreground">days logged</div>
           </div>
-          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="text-2xl font-semibold">{avg ? avg.kcal : "–"}</div>
             <div className="text-xs text-muted-foreground">avg kcal / logged day</div>
           </div>
-          <div className="rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="text-2xl font-semibold">{target ? `${onTarget}/${logged.length}` : "–"}</div>
             <div className="text-xs text-muted-foreground">days within 10% of target</div>
           </div>
@@ -200,7 +200,7 @@ export default function MealHistoryPage() {
 
       {/* Daily calories chart */}
       {!loading && logged.length > 0 && (
-        <div className="rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
           <p className="mb-2 text-xs text-muted-foreground">
             Daily calories · dashed line = target ({target ? target.calories : "none"} kcal)
           </p>
@@ -252,7 +252,7 @@ export default function MealHistoryPage() {
             .map((d) => {
               const s = target ? status(d.totals.kcal, target.calories) : null;
               return (
-                <div key={d.key} className="overflow-hidden rounded-3xl border bg-card shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+                <div key={d.key} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b p-3">
                     <span className="whitespace-nowrap font-medium">
                       {d.date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}

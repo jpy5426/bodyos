@@ -109,13 +109,13 @@ export default function MacrosPage() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-black">Macro Calculator</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Macro Calculator</h1>
         <p className="text-muted-foreground">
           Your daily calorie and protein, carb and fat targets. The goal you pick here is what your meal log tracks.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+      <div className="grid grid-cols-2 gap-4 rounded-xl border bg-card p-5 shadow-sm">
         <label className="space-y-1">
           <span className="text-sm">Sex</span>
           <select className={field} value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
@@ -173,7 +173,7 @@ export default function MacrosPage() {
 
       <button
         onClick={handleCalculate}
-        className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 font-black text-brand-foreground hover:brightness-95"
+        className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-7 font-bold text-brand-foreground hover:brightness-95"
       >
         Calculate
       </button>
@@ -182,7 +182,7 @@ export default function MacrosPage() {
       {status && <p className="text-green-600">{status}</p>}
 
       {result && (
-        <div className="space-y-3 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+        <div className="space-y-3 rounded-xl border bg-card p-5 shadow-sm">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b">

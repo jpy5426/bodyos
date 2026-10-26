@@ -24,7 +24,7 @@ export function FuelPerspective({
     );
   return (
     <div className={`rounded-xl border bg-muted/40 p-3.5 ${className}`}>
-      <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">In perspective</p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">In perspective</p>
       <ul className="space-y-2">
         {lines.map((l) => (
           <li key={l.label} className="flex gap-2.5 text-sm">

@@ -12,8 +12,8 @@ export default function ProtectedLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="w-full">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4">
+      <header className="w-full bg-primary text-primary-foreground shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
           <BrandLogo href="/protected" />
           <SiteNav />
           {!hasEnvVars ? (
@@ -26,9 +26,9 @@ export default function ProtectedLayout({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-14 pt-4">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-14 pt-8">{children}</main>
 
-      <footer className="border-t">
+      <footer className="border-t bg-card/60">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap justify-between gap-2 px-5 py-8 text-xs text-muted-foreground">
           <p>BodyOS · IST 440W Senior Capstone · Penn State</p>
           <p>For prevention and general wellness. Not medical advice.</p>

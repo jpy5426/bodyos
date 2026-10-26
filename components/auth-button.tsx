@@ -18,7 +18,7 @@ export async function AuthButton() {
         <span
           title={email}
           aria-label={`Signed in as ${email}`}
-          className="hidden h-11 w-11 items-center justify-center rounded-full bg-secondary text-sm font-extrabold sm:inline-flex"
+          className="hidden h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white ring-1 ring-white/15 sm:inline-flex"
         >
           {initials}
         </span>
@@ -31,13 +31,13 @@ export async function AuthButton() {
     <div className="flex gap-2">
       <Link
         href="/auth/login"
-        className="inline-flex min-h-11 items-center rounded-full border-2 border-border px-5 font-bold text-foreground no-underline hover:bg-muted"
+        className="inline-flex min-h-10 items-center rounded-lg border border-white/30 px-4 text-sm font-semibold text-white no-underline hover:bg-white/10"
       >
         Log in
       </Link>
       <Link
         href="/auth/sign-up"
-        className="inline-flex min-h-11 items-center rounded-full bg-brand px-5 font-extrabold text-brand-foreground no-underline hover:brightness-95"
+        className="inline-flex min-h-10 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-brand-foreground no-underline hover:brightness-95"
       >
         Sign up
       </Link>

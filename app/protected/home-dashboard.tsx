@@ -44,8 +44,8 @@ function todaysRoutine(days: PlanDay[], day: number): PlanDay | null {
   return sorted[day % sorted.length];
 }
 
-const card = "rounded-2xl border bg-card shadow-[0_1px_2px_rgba(24,35,74,0.04),0_8px_24px_rgba(24,35,74,0.05)]";
-const eyebrow = "text-[11px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground";
+const card = "rounded-xl border bg-card shadow-[0_1px_2px_rgba(24,35,74,0.04),0_8px_24px_rgba(24,35,74,0.05)]";
+const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground";
 
 function Bar({ pct, tone }: { pct: number; tone: "brand" | "navy" }) {
   const over = pct > 100;
@@ -136,12 +136,12 @@ export function HomeDashboard() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">{dateLabel || " "}</p>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-[34px]">{hello}</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{hello}</h1>
           <p className="text-muted-foreground">Here&apos;s your movement and nutrition for today.</p>
         </div>
         <Link
           href="/protected/meals"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-extrabold text-brand-foreground no-underline hover:brightness-95"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand px-5 text-sm font-semibold text-brand-foreground no-underline hover:brightness-95"
         >
           <UtensilsCrossed aria-hidden="true" className="h-4 w-4" />
           Log a meal
@@ -158,13 +158,13 @@ export function HomeDashboard() {
               </span>
               <div>
                 <p className={eyebrow}>Today&apos;s routine</p>
-                <h2 id="routine-h" className="text-lg font-extrabold leading-snug">
+                <h2 id="routine-h" className="text-lg font-semibold leading-snug">
                   {!loaded ? "Loading…" : routine ? `Routine ${routine.day_label} · ${routine.focus}` : "No routine yet"}
                 </h2>
               </div>
             </div>
             {routine && moves.length > 0 && (
-              <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-xs font-bold">
+              <span className="shrink-0 rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold">
                 {moves.length} exercises
               </span>
             )}
@@ -199,14 +199,14 @@ export function HomeDashboard() {
           <div className="mt-auto flex flex-wrap gap-3 pt-1">
             <Link
               href="/protected/workout"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-primary-foreground no-underline hover:bg-primary/90"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground no-underline hover:bg-primary/90"
             >
               <Play aria-hidden="true" className="h-4 w-4" />
               {routine ? "Open routine builder" : "Build my routine"}
             </Link>
             <Link
               href="/protected/library"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-sm font-extrabold text-foreground no-underline hover:bg-muted"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-5 text-sm font-semibold text-foreground no-underline hover:bg-muted"
             >
               <BookOpen aria-hidden="true" className="h-4 w-4" />
               Exercise library
@@ -223,19 +223,19 @@ export function HomeDashboard() {
               </p>
               {target && today ? (
                 <p className="mt-1">
-                  <span className="text-[34px] font-extrabold leading-none tracking-tight">
+                  <span className="text-[34px] font-semibold leading-none tracking-tight">
                     {Math.round(today.kcal).toLocaleString()}
                   </span>
                   <span className="ml-1.5 text-muted-foreground">/ {target.calories.toLocaleString()} kcal</span>
                 </p>
               ) : (
-                <p className="mt-1 text-lg font-extrabold">{loaded ? "No targets yet" : "Loading…"}</p>
+                <p className="mt-1 text-lg font-semibold">{loaded ? "No targets yet" : "Loading…"}</p>
               )}
             </div>
             {goal && (
               <Link
                 href="/protected/macros"
-                className="shrink-0 rounded-full bg-secondary px-3 py-1 text-xs font-bold capitalize text-foreground no-underline hover:bg-muted"
+                className="shrink-0 rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-foreground no-underline hover:bg-muted"
                 title="Change your goal in the macro calculator"
               >
                 {GOAL_LABEL[goal]}
@@ -295,7 +295,7 @@ export function HomeDashboard() {
 
       {/* Quick actions */}
       <section aria-labelledby="tools" className="flex flex-col gap-3">
-        <h2 id="tools" className="text-lg font-extrabold">
+        <h2 id="tools" className="text-lg font-semibold">
           Quick actions
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -308,7 +308,7 @@ export function HomeDashboard() {
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
                 <Icon aria-hidden="true" className="h-5 w-5" />
               </span>
-              <span className="mt-1 font-extrabold">{title}</span>
+              <span className="mt-1 font-semibold">{title}</span>
               <span className="text-sm text-muted-foreground">{desc}</span>
               <ArrowRight
                 aria-hidden="true"

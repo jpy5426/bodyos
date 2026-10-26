@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-// BodyOS wordmark: tangerine circle with a stretching figure.
+// BodyOS wordmark for the navy top bar: tangerine tile with a stretching figure.
 export function BrandLogo({ href = "/" }: { href?: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2.5 text-[22px] font-black text-foreground no-underline">
-      <span className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full bg-brand">
+    <Link href={href} className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-white no-underline">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand">
         <svg
           aria-hidden="true"
           width="22"

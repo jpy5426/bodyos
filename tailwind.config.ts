@@ -58,7 +58,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--font-nunito)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

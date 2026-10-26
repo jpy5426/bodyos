@@ -12,7 +12,7 @@ const LINKS = [
   { href: "/protected/meals", label: "Meals" },
 ];
 
-// Pill-shaped main menu. Highlights the section you're in
+// Main menu on the navy top bar. Highlights the section you're in
 // (Meals stays highlighted on Meal History too).
 export function SiteNav() {
   const pathname = usePathname();
@@ -28,7 +28,7 @@ export function SiteNav() {
       aria-label="Main"
       className="order-last w-full overflow-x-auto sm:order-none sm:w-auto"
     >
-      <div className="flex w-max gap-1.5 rounded-full bg-card p-1.5 shadow-[0_4px_16px_rgba(24,35,74,0.08)]">
+      <div className="flex w-max gap-1 rounded-lg bg-white/[0.06] p-1 ring-1 ring-white/10">
         {LINKS.map((l) => {
           const active = l.href === "/protected" ? pathname === l.href : pathname.startsWith(l.href);
           return (
@@ -37,8 +37,8 @@ export function SiteNav() {
               href={l.href}
               ref={active ? activeRef : undefined}
               aria-current={active ? "page" : undefined}
-              className={`inline-flex min-h-11 items-center rounded-full px-4 font-bold no-underline transition-colors ${
-                active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+              className={`inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold no-underline transition-colors ${
+                active ? "bg-white text-primary" : "text-[#C9D3F2] hover:bg-white/10 hover:text-white"
               }`}
             >
               {l.label}
