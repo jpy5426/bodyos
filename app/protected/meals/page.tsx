@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { FuelPerspective } from "@/components/fuel-perspective";
 import { createClient } from "@/lib/supabase/client";
 import { scale, sum, type Per100g } from "@/lib/nutrition";
 import { GOAL_LABEL, targetFromProfile, type Goal, type Target } from "@/lib/macros";
@@ -87,6 +88,7 @@ export default function MealsPage() {
   // Daily target for the goal picked in the Macro Calculator.
   const [goal, setGoal] = useState<Goal | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
+  const [weightLbs, setWeightLbs] = useState<number | null>(null);
   const [today, setToday] = useState<SavedMeal[]>([]);
   // USDA search panel: which row it's fixing, or "new" to add a food.
   const [searchTarget, setSearchTarget] = useState<number | "new" | null>(null);
@@ -116,6 +118,7 @@ export default function MealsPage() {
       const t = data ? targetFromProfile(data) : null;
       setGoal(t?.goal ?? null);
       setTarget(t?.target ?? null);
+      setWeightLbs(data?.weight_lbs ? Number(data.weight_lbs) : null);
     })();
     loadToday();
     // Reads the clock, so it runs in the browser after load (Cache Components can't pre-render it).
@@ -533,6 +536,7 @@ export default function MealsPage() {
                 </div>
               );
             })}
+            <FuelPerspective eaten={dayTotals.kcal} target={target.calories} weightLbs={weightLbs} className="mt-3" />
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">

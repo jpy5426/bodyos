@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { ExerciseFigure, VideoLink } from "@/components/exercise-figure";
 
 type Goal = "desk_relief" | "injury_prevention" | "mobility";
 type Level = "ground_zero" | "beginner" | "intermediate";
@@ -242,29 +243,33 @@ export default function RoutinePage() {
               <h2 className="text-lg font-semibold">
                 Routine {day.day_label}: {day.focus}
               </h2>
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-1">Exercise</th>
-                    <th>Dose</th>
-                    <th>Cues</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {day.blocks.map((b, i) => (
-                    <tr key={i} className="border-b align-top">
-                      <td className="py-2 pr-3">
-                        <span className="font-medium">{b.name}</span>
-                        <span className="block text-xs capitalize text-muted-foreground">
-                          {b.body_region} · {b.position}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3">{b.dose}</td>
-                      <td className="py-2 text-muted-foreground">{b.cues.join("; ")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ol className="divide-y">
+                {day.blocks.map((b, i) => (
+                  <li key={i} className="grid gap-3 py-4 first:pt-1 last:pb-0 sm:grid-cols-[minmax(0,240px)_1fr] sm:gap-5">
+                    <ExerciseFigure name={b.name} />
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <h3 className="font-bold">
+                          <span className="mr-1.5 text-muted-foreground">{i + 1}.</span>
+                          {b.name}
+                        </h3>
+                        <span className="text-sm font-bold">{b.dose}</span>
+                      </div>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {b.body_region} · {b.position}
+                      </p>
+                      {b.cues.length > 0 && (
+                        <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                          {b.cues.map((c, k) => (
+                            <li key={k}>{c}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <VideoLink name={b.name} />
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           ))}
         </div>

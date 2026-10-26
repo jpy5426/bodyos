@@ -10,11 +10,13 @@ Author: Ji Mok Yeom
 | --- | --- | --- |
 | Sign up / log in | `/auth/login`, `/auth/sign-up` | Supabase Auth (email + password). |
 | AI routine builder | `/protected/workout` → `POST /api/generate-plan` | The user picks a goal (desk relief, injury prevention, mobility), level, focus areas, positions and session length. The Claude API builds three rotating routines by choosing exercises **by number** from a filtered library, so it cannot invent exercises. Doses come from the database, not the AI. Users who report current pain or injury are told to follow a physical therapist's plan instead. |
-| Mobility & prehab library | `/protected/library` | 54 low-impact exercises with how-to steps and doses. Filter by focus, body region and position, or search. |
+| Mobility & prehab library | `/protected/library` | 54 low-impact exercises with how-to steps, doses, a two-step illustration (start → finish) and a how-to video link. Filter by focus, body region and position, or search. |
+| Exercise illustrations + videos | `public/exercises/*.svg`, `lib/exercise-media.ts` | Every library exercise has an illustration drawn for BodyOS from pose specs (`scripts/exercise-figures/`), shown in the library and on every routine card. Each also links to a YouTube search for physical-therapist demonstrations. |
 | Macro & calorie calculator | `/protected/macros` | Deterministic math: Mifflin-St Jeor BMR × activity factor, goal adjustment (cut −20% / bulk +15%), calorie floor (1,200 F / 1,500 M), macro split. The user picks a goal; the profile and goal are saved per user. |
 | Meal photo estimator | `/protected/meals` → `POST /api/estimate-meal` | **Hybrid AI + database.** Claude (vision) only names the foods and estimates grams. Calories and macros come from **USDA FoodData Central**, and code does the math. The app re-ranks USDA results so the right food wins (e.g. "salmon" never matches "Emu, fan fillet" or "Salmon nuggets"). The user can edit grams, change a match, add a missed food or remove items before saving. |
 | USDA food search | `GET /api/food-search?q=` | Used by "Change" and "Add a food". Runs on the server so the USDA key never reaches the browser. |
-| Daily tracking | `/protected/meals` | Today's calories, protein, carbs and fat against the goal chosen in the macro calculator. |
+| Daily tracking | `/protected/meals`, home dashboard | Today's calories, protein, carbs and fat against the goal chosen in the macro calculator. |
+| Calorie comparisons ("In perspective") | `lib/fuel-compare.ts` | Calories left or over are shown as an everyday food amount (USDA FoodData Central portions) and minutes of easy or brisk walking at the user's weight (MET × 3.5 × kg ÷ 200, MET values from the 2024 Adult Compendium). Deterministic, no AI. Wording stays neutral: no "burn it off". |
 | Meal history | `/protected/meals/history` | Last 7 / 14 / 30 days: daily calorie chart with the target line, days within 10% of target, and each meal's foods. |
 
 ### Why the AI is used where it is
@@ -45,11 +47,19 @@ app/
   protected/macros/             Macro calculator + goal
   protected/meals/              Meal photo estimator + today's totals
   protected/meals/history/      Meal history
+  protected/home-dashboard.tsx  Home: today's routine (with pictures) + today's fuel
+components/
+  exercise-figure.tsx           Exercise illustration + video link
+  fuel-perspective.tsx          "In perspective" calorie comparisons
 lib/
   claude.ts                     Claude API call + JSON extraction
   usda.ts                       USDA search, nutrient parsing, result ranking
   nutrition.ts                  Portion math (grams × per-100 g)
   macros.ts                     Macro targets + calorie floor (shared)
+  fuel-compare.ts               Food and walking equivalents for calories
+  exercise-media.ts             Illustration path + video link per exercise
+public/exercises/               54 exercise illustrations (SVG)
+scripts/exercise-figures/       Python that draws the illustrations
 supabase/                       SQL to rebuild the database
 ```
 

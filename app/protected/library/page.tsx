@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ExerciseFigure, VideoLink } from "@/components/exercise-figure";
 
 type Exercise = {
   id: string; name: string; category: string; equipment: string;
@@ -75,7 +76,8 @@ export default function LibraryPage() {
       <div>
         <h1 className="text-3xl font-black">Mobility &amp; Prehab Library</h1>
         <p className="text-sm text-muted-foreground">
-          Low-impact movements for desk breaks, injury prevention and joint mobility.
+          Low-impact movements for desk breaks, injury prevention and joint mobility. Each picture shows the
+          start (1) and finish (2), with a link to video demonstrations.
         </p>
       </div>
 
@@ -119,10 +121,11 @@ export default function LibraryPage() {
         <p className="text-sm text-muted-foreground">Showing {filtered.length} of {exercises.length} exercises</p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => (
-          <div key={e.id} className="flex flex-col gap-2 rounded-3xl border bg-card p-5 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
-            <div className="flex items-start justify-between gap-2">
+          <div key={e.id} className="flex flex-col gap-2 rounded-3xl border bg-card p-4 shadow-[0_8px_24px_rgba(24,35,74,0.06)]">
+            <ExerciseFigure name={e.name} />
+            <div className="mt-1 flex items-start justify-between gap-2">
               <h2 className="font-semibold">{e.name}</h2>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs capitalize ${FOCUS_STYLE[e.focus]}`}>
                 {e.focus}
@@ -137,6 +140,7 @@ export default function LibraryPage() {
             {e.how_to && <p className="text-sm">{e.how_to}</p>}
             {e.dose && <p className="text-sm"><span className="font-medium">Dose:</span> {e.dose}</p>}
             <p className="text-xs text-muted-foreground">Targets: {e.primary_muscles}</p>
+            <VideoLink name={e.name} className="mt-auto pt-1" />
           </div>
         ))}
       </div>
