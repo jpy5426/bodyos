@@ -6,6 +6,8 @@ import { FuelPerspective } from "@/components/fuel-perspective";
 import { createClient } from "@/lib/supabase/client";
 import { scale, sum, type Per100g } from "@/lib/nutrition";
 import { GOAL_LABEL, targetFromProfile, type Goal, type Target } from "@/lib/macros";
+import { isHeic, HEIC_HELP } from "@/lib/image";
+import { readResponse } from "@/lib/client-fetch";
 
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -131,14 +133,21 @@ export default function MealsPage() {
     setStatus(null);
     setItems([]);
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    const heic = isHeic(file);
+    // Windows often reports HEIC files with an empty type, so check the name too.
+    if (!file.type.startsWith("image/") && !heic) {
       setError("Please choose a photo.");
       return;
     }
+    if (file.size > 30 * 1024 * 1024) {
+      setError("That file is over 30 MB. Please choose a smaller photo.");
+      return;
+    }
     try {
+      // Safari can open HEIC, so try first and only explain if the browser can't.
       setPhoto(await resizeImage(file));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not read that photo.");
+      setError(heic ? HEIC_HELP : err instanceof Error ? err.message : "Could not read that photo.");
     }
   }
 
@@ -153,8 +162,7 @@ export default function MealsPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ image: photo, mediaType: "image/jpeg" }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      const data = await readResponse(res);
       setItems(data.items as Item[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -193,8 +201,7 @@ export default function MealsPage() {
     setSearchMsg(null);
     try {
       const res = await fetch(`/api/food-search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Search failed.");
+      const data = await readResponse(res);
       setResults(data.results as SearchResult[]);
       if (data.results.length === 0) setSearchMsg("No USDA foods found. Try a simpler word, like \"salmon\".");
     } catch (err) {

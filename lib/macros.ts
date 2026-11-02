@@ -48,7 +48,25 @@ export function isGoal(v: unknown): v is Goal {
   return v === "maintenance" || v === "cutting" || v === "bulking";
 }
 
+// Realistic adult ranges. Outside these, the formulas give nonsense
+// (e.g. 1 lb / 12 in produced -300 kcal in testing), so we refuse to calculate.
+export const LIMITS = {
+  age: { min: 18, max: 100 },
+  weightLbs: { min: 70, max: 700 },
+  heightIn: { min: 48, max: 90 }, // 4'0" to 7'6"
+};
+
+export function checkMeasurements(weightLbs: number, heightIn: number, age: number): string | null {
+  const bad = (v: number, r: { min: number; max: number }) => !Number.isFinite(v) || v < r.min || v > r.max;
+  if (bad(age, LIMITS.age)) return `Age must be between ${LIMITS.age.min} and ${LIMITS.age.max}.`;
+  if (bad(weightLbs, LIMITS.weightLbs))
+    return `Weight must be between ${LIMITS.weightLbs.min} and ${LIMITS.weightLbs.max} lb.`;
+  if (bad(heightIn, LIMITS.heightIn)) return "Height must be between 4 ft 0 in and 7 ft 6 in.";
+  return null;
+}
+
 // All three goals for a person, with the floor applied.
+// Throws a RangeError with a user-friendly message for out-of-range input.
 export function computeMacros(
   weightLbs: number,
   heightIn: number,
@@ -57,7 +75,13 @@ export function computeMacros(
   activity: Activity,
   preset: Preset,
 ) {
+  const problem = checkMeasurements(weightLbs, heightIn, age);
+  if (problem) throw new RangeError(problem);
   const raw = calculateMacros(lbsToKg(weightLbs), heightIn * 2.54, age, sex, activity, preset);
+  // Last line of defense: never hand back a zero or negative target.
+  for (const g of ["maintenance", "cutting", "bulking"] as const) {
+    if (!(raw[g].calories > 0)) throw new RangeError("Those measurements can't produce a valid target.");
+  }
   return applyFloor(raw, sex);
 }
 

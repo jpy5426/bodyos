@@ -63,7 +63,7 @@ export default function MacrosPage() {
     const w = Number(weightLbs);
     const ft = Number(feet);
     const inch = Number(inches);
-    if (![a, w, ft, inch].every(Number.isFinite) || a <= 0 || w <= 0 || ft <= 0) {
+    if (![a, w, ft, inch].every(Number.isFinite) || a <= 0 || w <= 0 || ft <= 0 || inch < 0 || inch >= 12) {
       setError("Please enter valid numbers.");
       setResult(null);
       return;

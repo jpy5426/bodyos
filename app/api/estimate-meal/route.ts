@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { callClaude, extractJson } from "@/lib/claude";
 import { searchFood } from "@/lib/usda";
 import { scale, sum, type Per100g } from "@/lib/nutrition";
+import { sniffImage } from "@/lib/image-sniff";
+import { allowRequest, tooMany, LIMITS } from "@/lib/rate-limit";
+import { readJson, BodyError } from "@/lib/http";
 
 // Hybrid design:
 //   1) Claude (vision) ONLY names the foods and estimates grams.
@@ -14,6 +17,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 type MediaType = (typeof ALLOWED_TYPES)[number];
 
 const MAX_BASE64_CHARS = 5_000_000; // ~3.7 MB image; the page resizes to ~200 KB first
+const MAX_BODY_BYTES = MAX_BASE64_CHARS + 64 * 1024; // image plus a little JSON
 const MAX_ITEMS = 8;
 const MIN_GRAMS = 1;
 const MAX_GRAMS = 1500;
@@ -85,10 +89,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Please log in again." }, { status: 401 });
   }
 
-  let body: { image?: string; mediaType?: string };
+  let body: { image?: unknown; mediaType?: unknown };
   try {
-    body = await req.json();
-  } catch {
+    const raw = await readJson(req, MAX_BODY_BYTES);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new BodyError(400, "Invalid request body.");
+    body = raw as typeof body;
+  } catch (err) {
+    if (err instanceof BodyError && err.status === 413)
+      return NextResponse.json({ error: "That photo is too large. Try a smaller one." }, { status: 413 });
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
@@ -100,12 +108,22 @@ export async function POST(req: NextRequest) {
   if (image.length > MAX_BASE64_CHARS) {
     return NextResponse.json({ error: "That photo is too large. Try a smaller one." }, { status: 413 });
   }
+  // The file's own bytes must say it's an image (stops renamed HTML/PDF/program files).
+  const actualType = sniffImage(image);
+  if (!actualType) {
+    return NextResponse.json({ error: "That file isn't a valid JPEG, PNG or WebP photo." }, { status: 400 });
+  }
+
+  // Cost protection: each photo is a paid AI vision call plus several USDA lookups.
+  if (!(await allowRequest(supabase, userData.user.id, LIMITS.estimateMeal))) {
+    return NextResponse.json(tooMany(LIMITS.estimateMeal), { status: 429, headers: { "retry-after": "60" } });
+  }
 
   // 1) Vision model: foods + grams only.
   let responseText: string;
   try {
     responseText = await callClaude(SYSTEM_PROMPT, [
-      { type: "image", source: { type: "base64", media_type: mediaType, data: image } },
+      { type: "image", source: { type: "base64", media_type: actualType, data: image } },
       { type: "text", text: "List the foods in this meal with estimated grams. JSON only." },
     ]);
   } catch (err) {

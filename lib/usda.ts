@@ -143,10 +143,26 @@ export function scoreCandidate(query: string, description: string, rank = 0): nu
   );
 }
 
-// Raw search against FoodData Central (generic foods only). Empty list on failure.
-async function fetchFoods(query: string): Promise<FdcFood[]> {
+// ---- Cache --------------------------------------------------------------------
+// The same foods ("rice white cooked", "chicken breast grilled") come up again and
+// again. USDA nutrient values change rarely, so successful searches are cached for
+// 24 hours. This keeps BodyOS well inside the USDA key's hourly quota as users grow,
+// and makes repeat lookups instant.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_MAX = 1000;
+const cache = new Map<string, { at: number; foods: FdcFood[] }>();
+const inFlight = new Map<string, Promise<FdcFood[] | null>>();
+
+const cacheKey = (q: string) => q.toLowerCase().replace(/\s+/g, " ").trim();
+
+// Raw search against FoodData Central (generic foods only).
+// Returns null on failure (never throws), so one bad lookup can't crash a meal estimate.
+async function fetchFromUsda(query: string): Promise<FdcFood[] | null> {
   const apiKey = process.env.USDA_API_KEY;
-  if (!apiKey) throw new Error("USDA_API_KEY is not set");
+  if (!apiKey) {
+    console.error("USDA_API_KEY is not set; food lookups are disabled.");
+    return null;
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
@@ -162,16 +178,35 @@ async function fetchFoods(query: string): Promise<FdcFood[]> {
     );
     if (!res.ok) {
       console.error("USDA search failed:", res.status, (await res.text()).slice(0, 300));
-      return [];
+      return null;
     }
     const data = await res.json();
     return Array.isArray(data?.foods) ? data.foods : [];
   } catch (err) {
     console.error("USDA search error:", err);
-    return [];
+    return null;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchFoods(query: string): Promise<FdcFood[]> {
+  const key = cacheKey(query);
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.foods;
+
+  // If 20 users search "rice" at the same moment, send one request, not 20.
+  let pending = inFlight.get(key);
+  if (!pending) {
+    pending = fetchFromUsda(query).finally(() => inFlight.delete(key));
+    inFlight.set(key, pending);
+  }
+  const foods = await pending;
+  if (foods === null) return []; // failures are not cached, so the next try asks again
+
+  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string); // drop oldest
+  cache.set(key, { at: Date.now(), foods });
+  return foods;
 }
 
 // Usable candidates, best first. Exported for unit tests.

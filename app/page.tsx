@@ -1,47 +1,9 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { AuthButton } from "@/components/auth-button";
+import { LandingAuthButton, LandingHeroCta } from "@/components/landing-session";
 import { BookOpen, Camera, Sparkles } from "lucide-react";
 import { HeroPreview } from "@/components/hero-preview";
-import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
-
-// Main call to action: "Open BodyOS" when signed in, otherwise sign up.
-async function HeroCta() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (data?.claims) {
-    return (
-      <Link
-        href="/protected"
-        className="inline-flex min-h-12 items-center rounded-lg bg-brand px-6 font-bold text-brand-foreground no-underline hover:brightness-95"
-      >
-        Open BodyOS
-      </Link>
-    );
-  }
-  return <SignUpCta />;
-}
-
-function SignUpCta() {
-  return (
-    <div className="flex flex-wrap gap-3">
-      <Link
-        href="/auth/sign-up"
-        className="inline-flex min-h-12 items-center rounded-lg bg-brand px-6 font-bold text-brand-foreground no-underline hover:brightness-95"
-      >
-        Get started free
-      </Link>
-      <Link
-        href="/auth/login"
-        className="inline-flex min-h-12 items-center rounded-lg border border-white/30 px-6 font-semibold text-white no-underline hover:bg-white/10"
-      >
-        I have an account
-      </Link>
-    </div>
-  );
-}
 
 const FEATURES = [
   {
@@ -68,11 +30,7 @@ export default function Home() {
       <div className="bg-primary text-primary-foreground">
         <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
           <BrandLogo href="/" />
-          {hasEnvVars && (
-            <Suspense fallback={<div className="h-10 w-40" />}>
-              <AuthButton />
-            </Suspense>
-          )}
+          {hasEnvVars && <LandingAuthButton />}
         </header>
         <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 pb-16 pt-10 md:grid-cols-[1.1fr_1fr] md:pb-20 md:pt-14">
           <div className="flex flex-col gap-5">
@@ -85,13 +43,7 @@ export default function Home() {
               injuries, and keeps simple track of what you eat.
             </p>
             <div className="mt-1">
-              {hasEnvVars ? (
-                <Suspense fallback={<SignUpCta />}>
-                  <HeroCta />
-                </Suspense>
-              ) : (
-                <SignUpCta />
-              )}
+              <LandingHeroCta />
             </div>
           </div>
           <HeroPreview className="mx-auto w-full max-w-[440px]" />

@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ExerciseFigure, VideoLink } from "@/components/exercise-figure";
+import { readResponse } from "@/lib/client-fetch";
 
 type Goal = "desk_relief" | "injury_prevention" | "mobility";
 type Level = "ground_zero" | "beginner" | "intermediate";
@@ -117,14 +118,16 @@ export default function RoutinePage() {
           hasPain,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error || "Something went wrong building your routine.");
-        return;
-      }
+      const data = await readResponse(res);
       setPlan(data.plan);
-    } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+    } catch (err) {
+      setError(
+        err instanceof TypeError
+          ? "Could not reach the server. Check your connection and try again."
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong building your routine.",
+      );
     } finally {
       setLoading(false);
     }

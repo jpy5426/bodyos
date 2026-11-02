@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
@@ -13,10 +13,14 @@ export const metadata: Metadata = {
   description: "Sit less, move better, stay injury-free. AI mobility and prehab routines plus simple nutrition tracking.",
 };
 
-const inter = Inter({
+// Inter is bundled in the repo (SIL Open Font License, app/fonts/Inter-LICENSE.txt).
+// Loading it from Google Fonts made the build fail on networks that block
+// fonts.googleapis.com, or with no internet at all.
+const inter = localFont({
+  src: "./fonts/InterVariable-latin.woff2",
   variable: "--font-inter",
   display: "swap",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { searchFoods } from "@/lib/usda";
+import { allowRequest, tooMany, LIMITS } from "@/lib/rate-limit";
 
 // GET /api/food-search?q=salmon baked
 // Lets the user fix a wrong match or add a food the AI missed.
@@ -15,6 +16,10 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2 || q.length > 80) {
     return NextResponse.json({ error: "Type 2 to 80 characters to search." }, { status: 400 });
+  }
+
+  if (!(await allowRequest(supabase, userData.user.id, LIMITS.foodSearch))) {
+    return NextResponse.json(tooMany(LIMITS.foodSearch), { status: 429, headers: { "retry-after": "30" } });
   }
 
   const matches = await searchFoods(q);

@@ -67,7 +67,7 @@ supabase/                       SQL to rebuild the database
 
 ### 1. Prerequisites
 
-- Node.js 20 or newer (`node -v`)
+- Node.js 20.9 or newer (`node -v`); Node 22 recommended (see `.nvmrc`)
 - Git
 - A free Supabase account: <https://supabase.com>
 - An Anthropic API key: <https://console.anthropic.com>
@@ -92,6 +92,7 @@ npm install
    - `05_fill_original_exercises.sql`: how-to steps, body regions and doses for the original exercises
    - `05_meal_logs.sql`: saved meals and their food items
    - `06_macro_goal.sql`: the goal (maintain / cut / bulk) on the macro profile
+   - `07_hardening.sql`: per-user rate limits and range checks on saved numbers (Week 9 testing)
 3. Check **Table Editor**. You should see `macro_profiles`, `exercises`, `workout_plans`, `plan_days`, `plan_exercises`, `meal_logs` and `meal_items`.
 4. For quick testing, go to **Authentication → Sign In / Providers → Email** and turn off **Confirm email**, so new accounts can log in without clicking an email link.
 
@@ -126,6 +127,22 @@ Open <http://localhost:3000>, sign up, and use the cards on the home page.
 - `.env.local` is git-ignored. API keys are only used in server routes, never sent to the browser.
 - Every user table uses Row-Level Security, so users can only read and change their own rows.
 - Meal photos are sent to the Claude API for analysis and are **not stored**. Only food names, grams and numbers are saved.
+- The AI routes are rate limited per user (5 routines and 15 meal photos per 10 minutes, 60 food searches per minute).
+- Every server route re-validates its input against fixed lists; no free text from users is placed in AI prompts.
+- Uploads are size-capped and checked by file signature; security headers block framing and limit camera access to BodyOS.
+
+## Testing
+
+```bash
+npm test               # 67 automated tests: security, bad input, outside-service failures, scaling, platform, database
+npm run build && npm start      # then, in a second terminal:
+npm run test:load      # 100 simultaneous users against the running app (free: no AI calls)
+npx playwright install chromium firefox webkit   # once
+BROWSERS=chromium,firefox,webkit node scripts/browser-test.mjs   # phone/tablet/desktop sizes in 3 browser engines
+```
+
+`npm test` needs no API keys or internet: Supabase, the Claude API and USDA are replaced with fakes,
+and `tests/database.test.ts` runs the real `supabase/*.sql` files in an embedded Postgres to attack the Row-Level Security policies.
 
 ## Troubleshooting
 
@@ -136,6 +153,9 @@ Open <http://localhost:3000>, sign up, and use the cards on the home page.
 | Can't log in after signing up | Turn off **Confirm email** (step 3.4) or click the link in the email. |
 | `relation "..." does not exist` | A SQL file wasn't run. Run the missing file from step 3. |
 | "Calculated, but saving failed: ... goal" | Run `06_macro_goal.sql`. |
+| "You've reached the limit of ..." | Rate limit working as designed. Wait a few minutes. |
+| Server log says `hit_rate_limit() unavailable` | Run `07_hardening.sql`. Until then, limits are kept in server memory. |
+| "...check constraint..." when saving a profile | A value is outside realistic adult ranges (age 18-100, 70-700 lb, 4'0"-7'6"). |
 
 ## Disclaimer
 

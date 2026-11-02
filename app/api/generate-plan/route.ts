@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { callClaude, extractJson } from "@/lib/claude";
+import { validateIntake, cleanCues, cleanFocus, type Goal, type Level, type Where, type Intake } from "@/lib/validation";
+import { allowRequest, tooMany, LIMITS } from "@/lib/rate-limit";
+import { readJson, BodyError } from "@/lib/http";
 
-// ---- Request shape from the intake form -----------------------------------
-type Goal = "desk_relief" | "injury_prevention" | "mobility";
-type Level = "ground_zero" | "beginner" | "intermediate";
-type Where = "seated" | "standing" | "floor";
-
-type Intake = {
-  objective: Goal;
-  level: Level;
-  age: number;
-  focusAreas: string[]; // e.g. ["neck", "lower back"]; empty = whole body
-  where: Where; // the most demanding position the user can do
-  minutes: number; // per session
-  weeks: number;
-  equipment: string[]; // subset of: resistance_band, step, strap, towel
-  hasPain: boolean;
-};
+// The intake form sends well under 1 KB; anything near this size is not from the form.
+const MAX_BODY_BYTES = 16 * 1024;
 
 type DbExercise = {
   id: string;
@@ -123,68 +113,6 @@ At least half of each routine should target the focus areas. ${
 Return a JSON object with a top-level "days" array. Reference exercises ONLY by their number from the AVAILABLE EXERCISES list.`;
 }
 
-// Calls the Claude API (Anthropic Messages API). One retry on 429/5xx/529.
-async function callModel(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
-  const model = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
-
-  const body = JSON.stringify({
-    model,
-    max_tokens: 4096,
-    temperature: 0.4,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  });
-
-  let lastError = "";
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body,
-        signal: controller.signal,
-      });
-
-      if (res.ok) {
-        const message = await res.json();
-        const text = (message.content || [])
-          .filter((block: any) => block.type === "text")
-          .map((block: any) => block.text)
-          .join("");
-        if (!text) throw new Error("Empty response from the model");
-        if (message.stop_reason === "max_tokens") {
-          throw new Error("Response was cut off (max_tokens reached)");
-        }
-        return text;
-      }
-
-      lastError = `${res.status} ${await res.text()}`;
-      if (res.status !== 429 && res.status < 500) break; // 4xx other than 429: no point retrying
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-  throw new Error(`Claude API request failed: ${lastError}`);
-}
-
-// Some models wrap JSON in ```json fences even when told not to.
-function extractJson(text: string): unknown {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1] : trimmed;
-  return JSON.parse(candidate);
-}
-
 // Resolves numeric refs back to real exercises; drops anything invalid
 // instead of trusting the model's output directly. The dose always comes
 // from the database, never from the model.
@@ -212,7 +140,7 @@ function resolvePlan(raw: any, exercises: DbExercise[], perDay: number) {
           body_region: exercise.body_region,
           position: exercise.position,
           dose: exercise.dose,
-          cues: Array.isArray(block?.cues) ? block.cues.map(String).slice(0, 3) : [],
+          cues: cleanCues(block?.cues),
         };
       })
       .filter(Boolean)
@@ -220,7 +148,7 @@ function resolvePlan(raw: any, exercises: DbExercise[], perDay: number) {
 
     return {
       day_label: DAY_LABELS[i] ?? String(day?.day || "A"),
-      focus: String(day?.focus || ""),
+      focus: cleanFocus(day?.focus),
       blocks: resolvedBlocks,
     };
   });
@@ -237,19 +165,19 @@ export async function POST(req: NextRequest) {
   }
   const userId = userData.user.id;
 
-  let intake: Intake;
+  // Size cap first, then strict validation against fixed lists.
+  let raw: unknown;
   try {
-    intake = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    raw = await readJson(req, MAX_BODY_BYTES);
+  } catch (err) {
+    const status = err instanceof BodyError ? err.status : 400;
+    return NextResponse.json({ error: err instanceof BodyError ? err.message : "Invalid request body." }, { status });
   }
+  const checked = validateIntake(raw);
+  if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: checked.status });
+  const intake: Intake = checked.intake;
+  const { minutes, weeks, focusAreas } = intake;
 
-  if (!intake?.objective || !intake?.level || !intake?.where || !Number.isFinite(intake.age)) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
-  }
-  if (intake.age < 18) {
-    return NextResponse.json({ error: "BodyOS routines are for adults 18 and older." }, { status: 400 });
-  }
   // Safety guardrail: BodyOS is for prevention, not for active injuries.
   if (intake.hasPain) {
     return NextResponse.json(
@@ -260,14 +188,15 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const minutes = Math.min(30, Math.max(5, Number(intake.minutes) || 15));
-  const weeks = Math.min(12, Math.max(4, Number(intake.weeks) || 4));
-  const focusAreas = Array.isArray(intake.focusAreas) ? intake.focusAreas.map(String) : [];
-  intake = { ...intake, minutes, weeks, focusAreas };
+
+  // Cost protection: each routine is a paid AI call.
+  if (!(await allowRequest(supabase, userId, LIMITS.generatePlan))) {
+    return NextResponse.json(tooMany(LIMITS.generatePlan), { status: 429, headers: { "retry-after": "60" } });
+  }
 
   // 1) Pull only sedentary / prehab / mobility exercises the user can do.
   const equipmentTerms = Array.from(
-    new Set(["bodyweight", "chair", "wall", ...(intake.equipment || [])]),
+    new Set(["bodyweight", "chair", "wall", ...intake.equipment]),
   );
 
   const { data: exercises, error: exError } = await supabase
@@ -292,7 +221,10 @@ export async function POST(req: NextRequest) {
   // 2) Call the model.
   let responseText: string;
   try {
-    responseText = await callModel(buildSystemPrompt(intake, exercises, perDay), buildUserPrompt(intake));
+    responseText = await callClaude(buildSystemPrompt(intake, exercises, perDay), buildUserPrompt(intake), {
+      maxTokens: 4096,
+      temperature: 0.4,
+    });
   } catch (err) {
     console.error("Model call failed:", err);
     return NextResponse.json(
